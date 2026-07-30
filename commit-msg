@@ -1,0 +1,22 @@
+#!/bin/sh
+# git config --global core.hooksPath ~/.git-hooks
+# chmod +x ~/.git-hooks/commit-msg
+commit_msg_file="$1"
+commit_msg=$(head -n1 "$commit_msg_file")
+
+# conventional-commit check
+pattern="^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9-]+\))?(!)?: .{1,}"
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+  echo "❌ Commit message doesn't follow Conventional Commits format."
+  echo "   Expected: <type>(<scope>): <description>"
+  exit 1
+fi
+
+# respect existing commit hooks 
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null)
+local_hook="$repo_root/.git/hooks/commit-msg"
+if [ -x "$local_hook" ] && [ "$local_hook" != "$0" ]; then
+  "$local_hook" "$@" || exit $?
+fi
+
+exit 0
